@@ -10,8 +10,7 @@
 Murfie is a Python CLI tool and library for interacting with the undocumented
 [Murfie][1] API.
 
-Note: This is an unofficial project not sponsored by Murfie.com 
-This is also currently alpha quality software. Use at your own risk.
+Note: This is currently a WIP. Issues and PRs welcome.
 
 [1]: https://murfie.com
 
@@ -47,6 +46,8 @@ pip install --user --upgrade -e git+https://github.com/lrvick/murfie/#egg=murfie
     ```
 
 ## Notes ##
+
+  This is an unofficial project not sponsored by Murfie.com.
 
   Use at your own risk. You may be eaten by a grue.
 
