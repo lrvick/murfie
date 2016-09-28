@@ -2,11 +2,6 @@
 
 <http://github.com/lrvick/murfie>
 
-[![TravisCI][travis-badge]][travis-status]
-[![Test Coverage][cc-coverage-badge]][cc-coverage]
-[![Code Climate][cc-badge]][cc-repo]
-[![PyPI version][pypy-badge]][pypy]
-[![Wheel][wheel-badge]][wheel]
 [![Dependencies][dependencies-badge]][dependencies]
 [![License][license-badge]][license]
 
@@ -48,7 +43,7 @@ pip install --user --upgrade -e git+https://github.com/lrvick/murfie/#egg=murfie
 2. Download entire library to current directory
 
     ```bash
-    murfie library download
+    murfie sync
     ```
 
 ## Notes ##
