@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from http.cookiejar import LWPCookieJar
 from urllib.request import HTTPCookieProcessor, build_opener
 from urllib.parse import urlencode
+from urllib.request import HTTPSHandler
 
 
 class Murfie():
@@ -11,19 +12,20 @@ class Murfie():
     def __init__(self):
         self.url = "https://www.murfie.com"
         self.cookies = LWPCookieJar()
-        self.opener = build_opener(HTTPCookieProcessor(self.cookies))
+        self.opener = build_opener(
+            HTTPCookieProcessor(self.cookies),
+            HTTPSHandler(debuglevel=0)
+        )
         self.auth_token = self._get_auth_token()
-        self.opener.addheaders = [
-            ('User-Agent', "Mozilla/5.0 (X11; Linux x86_64) \
-                            AppleWebKit/537.36 (KHTML, like Gecko) \
-                            Chrome/53.0.2785.116 Safari/537.36"),
-            ('DNT', 1),
-        ]
         self.confdir = "%s/.murfie/" % os.environ['HOME']
         os.makedirs(self.confdir, exist_ok=True)
 
-    def _get_auth_token(self):
-        html = self.opener.open("%s/users/login" % self.url).read()
+    def _get_auth_token(self, login=False):
+        if login:
+            url = "%s/users/login" % self.url
+        else:
+            url = "%s/account/password" % self.url
+        html = self.opener.open(url).read()
         bs = BeautifulSoup(html, "lxml")
         auth_token = bs.select_one("input[name=authenticity_token]")["value"]
         if not auth_token:
@@ -31,6 +33,7 @@ class Murfie():
         return auth_token
 
     def login(self, email=None, password=None):
+        self.auth_token = self._get_auth_token(login=True)
         if not email or not password:
             try:
                 self.cookies.load(
@@ -56,6 +59,7 @@ class Murfie():
                 '%s/cookies.txt' % self.confdir,
                 ignore_discard=True
             )
+        self.auth_token = self._get_auth_token()
         return True
 
     def _get_library_total_pages(self):
@@ -80,14 +84,17 @@ class Murfie():
         return disc_ids
 
     def request_disc_download(self, disc_id):
-        resp = self.opener.open(
-            "%s/deliveries/%s/create_download" % (self.url, disc_id),
-            bytes(urlencode({
-                "utf8": "✓",
-                "authenticity_token": self.auth_token,
-                "commit": "Request+Download"
-            }), "utf-8")
-        )
-        if resp.getcode() != 200:
-            return Exception("Download request failed")
+        success_url = \
+            'https://www.murfie.com/deliveries/%s/download_requested' % disc_id
+        url = "%s/deliveries/%s/create_download" % (self.url, disc_id)
+        args = bytes(urlencode({
+            "utf8": "✓",
+            "authenticity_token": self.auth_token,
+            "download_format_option": "2",
+            "commit": "Request+Download",
+        }), "utf-8")
+        resp = self.opener.open(url, args)
+        if resp.url != success_url:
+            print(resp.url, success_url)
+            raise Exception("Download request failed")
         return True
