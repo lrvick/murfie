@@ -20,13 +20,13 @@ def create_parser():
         "email",
         metavar="email",
         type=str,
-        help="Murphie.com email"
+        help="Murfie.com email"
     )
     login_parser.add_argument(
         "password",
         metavar="password",
         type=str,
-        help="Murphie.com password"
+        help="Murfie.com password"
     )
 
     subparsers.add_parser(
@@ -55,7 +55,7 @@ def process_args(args):
             # Sleep required to avoid bug where murfie's third
             # party download service often generates empty zips
             # when > 1 download/min
-            print("Sleeping 60 seconds to avoid overwhelming murphie D/L api.")
+            print("Sleeping 60 seconds to avoid overwhelming Murfie D/L api.")
             time.sleep(60)
         pass
 
