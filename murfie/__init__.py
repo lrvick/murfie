@@ -1,6 +1,7 @@
 from murfie.murfie import Murfie
 import time
 from argparse import ArgumentParser
+from math import log2
 
 
 def create_parser():
@@ -37,6 +38,12 @@ def create_parser():
     return parser
 
 
+def file_size(size):
+    unit = ['bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
+    order = int(log2(size) / 10) if size else 0
+    return '{:.4g} {}'.format(size / (1 << (order * 10)), unit[order])
+
+
 def process_args(args):
 
     m = Murfie()
@@ -47,8 +54,12 @@ def process_args(args):
 
     if args.parser == 'sync':
         m.login()
-        for disc_id in m.get_library_disc_ids():
 
+        for download_id in m.get_download_ids():
+            print("Purging stale download: %s" % download_id)
+            m.remove_download(download_id)
+
+        for disc_id in m.get_library_disc_ids():
             print("Requesting download for disc id: %s" % disc_id)
             m.request_disc_download(disc_id)
 
@@ -57,7 +68,14 @@ def process_args(args):
             # when > 1 download/min
             print("Sleeping 60 seconds to avoid overwhelming Murfie D/L api.")
             time.sleep(60)
-        pass
+
+        for download_id in m.get_download_ids():
+            print("\nStarting download id: %s\n" % download_id)
+            for complete, total in m.start_download(download_id):
+                status = r"%s.zip %s [%3.2f%%]" % \
+                    (download_id, file_size(complete), complete * 100. / total)
+                status = status + chr(8)*(len(status)+1)
+                print("\r", status, end="")
 
 
 def main():

@@ -62,15 +62,15 @@ class Murfie():
         self.auth_token = self._get_auth_token()
         return True
 
-    def _get_library_total_pages(self):
-        html = self.opener.open("%s/library" % self.url).read()
+    def _get_total_pages(self, page):
+        html = self.opener.open("%s/%s" % (self.url, page)).read()
         bs = BeautifulSoup(html, "lxml")
         num_pages = bs.select_one("span[class=last] a")["href"].split('=')[1]
         return int(num_pages)
 
     def get_library_disc_ids(self):
         page_num = 1
-        total_pages = self._get_library_total_pages()
+        total_pages = self._get_total_pages('library')
         disc_ids = []
         while page_num != total_pages:
             html = self.opener.open(
@@ -82,6 +82,49 @@ class Murfie():
                 disc_ids.append(disc_id)
             page_num += 1
         return disc_ids
+
+    def get_download_ids(self):
+        page_num = 1
+        total_pages = self._get_total_pages('downloads')
+        download_ids = []
+        while page_num != total_pages:
+            html = self.opener.open(
+                "%s/downloads?pending_page=%d" % (self.url, page_num)
+            ).read()
+            bs = BeautifulSoup(html, "lxml")
+            for element in bs.select("a[title=Download]"):
+                download_id = element['href'].split('/')[2]
+                download_ids.append(download_id)
+            page_num += 1
+        return download_ids
+
+    def start_download(self, download_id):
+        download = self.opener.open(
+            "%s/downloads/%s/download" % (self.url, download_id)
+        )
+        bytes_total = int(download.getheader('Content-Length'))
+        file_handle = open('%s.zip' % download_id, 'wb')
+        bytes_complete = 0
+        block_size = 8192
+        while True:
+            buffer = download.read(block_size)
+            if not buffer:
+                break
+            bytes_complete += len(buffer)
+            file_handle.write(buffer)
+            yield (bytes_complete, bytes_total)
+        file_handle.close()
+
+    def remove_download(self, download_id):
+        resp = self.opener.open(
+            "%s/downloads/%s" % (self.url, download_id),
+            bytes(urlencode({
+                "_method": "delete",
+                "authenticity_token": self.auth_token,
+            }), "utf-8")
+        )
+        if resp.getcode() != 200:
+            return Exception("Remove failed")
 
     def request_disc_download(self, disc_id):
         success_url = \
