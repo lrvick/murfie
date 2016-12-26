@@ -72,7 +72,7 @@ class Murfie():
         page_num = 1
         total_pages = self._get_total_pages('library')
         disc_ids = []
-        while page_num != total_pages:
+        while page_num <= total_pages:
             html = self.opener.open(
                 "%s/library?page=%d" % (self.url, page_num)
             ).read()
